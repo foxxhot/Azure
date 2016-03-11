@@ -4,16 +4,16 @@
 	"parameters": {
 		"vnetname":{
 			"type": "string"
-		}
+		},
 		"location":{
 			"type": "string"
-		}
+		},
 		"vnetaddressSpace": {
 			"type": "string"
-		}
+		},
 		"subnetname": {
 			"type": "string"
-		}
+		},
 		"subneteprifix1": {
 			"type": "string",
 		}
