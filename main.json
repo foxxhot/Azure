@@ -3,7 +3,7 @@
 	"contentVersion": "1.0.0.0",
 	"variables": {
 		"baseurl": "https://raw.githubusercontent.com/foxxhot/Azure/master/createvnet.json",
-		"apiVersion": "2015-11-01",
+		"apiVersion": "2015-06-15",
 		"location": "[resourceGroup().location]",
 		
 	},
