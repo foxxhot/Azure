@@ -8,7 +8,7 @@
 		
 	},
 	"resources": [{
-		"apiVersion": "[variables('apiVersion')]",
+		"apiVersion": "2016-02-01",
 		"name": "CreateVnet",
 		"type": "Microsoft.Resources/deployments",
 		"properties": {
