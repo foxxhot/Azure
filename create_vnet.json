@@ -17,7 +17,7 @@
 		"subneteprifix1": {
 			"type": "string",
 		}
-	}
+	},
 	
 	"resources": [{
 		"apiVersion": "2015-06-15",
