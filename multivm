@@ -1,0 +1,242 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {					
+		"adminUsername": {
+			"type": "string",
+			"metadata": {
+				"description": "User name for the Virtual Machine."
+			}
+		},
+		"adminPassword": {
+			"type": "securestring",
+			"metadata": {
+				"description": "Password for the Virtual Machine."
+			}
+		}					
+	},
+	
+	"variables": {
+		"storageAccountName": "[concat(uniquestring(resourceGroup().id), 'linuxvm')]",
+		"location": "[resourceGroup().location]",
+		"addressPrefix": "10.0.0.0/16",
+		"subnetName": "Subnet",
+		"subnetPrefix": "10.0.0.0/24",
+		"storageAccountType": "Standard_LRS",
+		"publicIPAddressType": "Dynamic",
+		"virtualNetworkName": "MyVNET",
+		"vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",	
+		"subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",	
+		"subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
+		"availabilitySetName": "avset-ap",
+		"apiVersion": "2015-06-15",
+		"vmParameters":
+		[{
+			"vmName": "ap1",
+			"computerName": "ap1",
+			"locName": "",
+			"rgName": "",
+			"vmSize": "Standard_A3",
+			"avsetName": "avset-ap",
+			"imagePublisher": "MicrosoftWindowsServer",
+			"imageOffer": "WindowsServer",
+			"imageSkus": "2012-R2-Datacenter",
+			"imageVersion": "latest",
+			"nic1Name": "ap1-nic1",
+			"nic2Name": "ap1-nic2",
+			"nic3Name": "",
+			"osDiskName": "ap1-odisk",
+			"osDiskStorageAccountName": "[variables('storageAccountName')]",
+			"osDiskStorageAccountContainerName": "vhds",
+			"osDiskSize": 127,
+			"dataDisk1Name": "ap1-datadisk-1",
+			"dataDisk1StorageAccountName": "[variables('storageAccountName')]",
+			"dataDisk1StorageAccountContainerName": "vhds",
+			"dataDisk1Size": 127,
+			"dataDisk2Name": "",
+			"dataDisk2StorageAccountName": "",
+			"dataDisk2StorageAccountContainerName": "",
+			"dataDisk2Size": ""
+		},
+		{
+			"vmName": "ap2",
+			"computerName": "ap2",
+			"locName": "",
+			"rgName": "",
+			"vmSize": "Standard_A3",
+			"avsetName": "avset-ap",
+			"imagePublisher": "MicrosoftWindowsServer",
+			"imageOffer": "WindowsServer",
+			"imageSkus": "2012-R2-Datacenter",
+			"imageVersion": "latest",
+			"nic1Name": "ap2-nic1",
+			"nic2Name": "ap2-nic2",
+			"nic3Name": "",
+			"osDiskName": "ap2-odisk",
+			"osDiskStorageAccountName": "[variables('storageAccountName')]",
+			"osDiskStorageAccountContainerName": "vhds",
+			"osDiskSize": 127,
+			"dataDisk1Name": "ap2-datadisk-1",
+			"dataDisk1StorageAccountName": "[variables('storageAccountName')]",
+			"dataDisk1StorageAccountContainerName": "vhds",
+			"dataDisk1Size": 127,
+			"dataDisk2Name": "",
+			"dataDisk2StorageAccountName": "",
+			"dataDisk2StorageAccountContainerName": "",
+			"dataDisk2Size": ""
+		}],
+
+		"nicParameters":[{
+				"nicName": "ap1-nic1"
+			},
+			{
+				"nicName": "ap1-nic2"
+			},	
+			{
+				"nicName": "ap2-nic1"
+			},
+			{
+				"nicName": "ap2-nic2"
+			}			
+		],
+	
+		"numberofvmParameters": "[length(variables('vmParameters'))]"
+	},
+
+	"resources": [
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"type": "Microsoft.Network/virtualNetworks",
+		"name": "[variables('virtualNetworkName')]",
+		"location": "[variables('location')]",
+		"properties": {
+			"addressSpace": {
+				"addressPrefixes": ["[variables('addressPrefix')]"]
+			},
+			"subnets": [{
+				"name": "[variables('subnetName')]",
+				"properties": {
+					"addressPrefix": "[variables('subnetPrefix')]"
+				}
+			}]
+		}
+	},
+	
+	
+	{
+		"type": "Microsoft.Compute/availabilitySets",
+		"name": "[variables('availabilitySetName')]",
+		"apiVersion": "[variables('apiVersion')]",
+		"location": "[variables('location')]",
+		"properties": {
+			"platformFaultDomainCount": "3",
+			"platformUpdateDomainCount": "20"
+		}
+	},
+	
+
+	{
+		"type": "Microsoft.Storage/storageAccounts",
+		"name": "[variables('storageAccountName')]",
+		"apiVersion": "[variables('apiVersion')]",
+		"location": "[variables('location')]",		
+		"properties": {
+			"accountType": "[variables('storageAccountType')]"
+		}
+	},
+
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"type": "Microsoft.Network/networkInterfaces",
+		"name": "[variables('nicParameters')[copyIndex()].nicName]",
+		"location": "[variables('location')]",
+		"dependsOn": ["[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"],		
+		"copy":{
+			"name": "copynic",
+			"count": "[length(variables('nicParameters'))]" 
+		},
+		"properties": {
+			"ipConfigurations": [{
+				"name": "ipconfig1",
+				"properties": {
+					"privateIPAllocationMethod": "Dynamic",
+					"subnet": {
+						"id": "[variables('subnetRef')]"
+					}
+				}
+			}]
+		}
+	},	
+
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"type": "Microsoft.Compute/virtualMachines",			
+		"copy":{
+			"name":"copyvm",
+			"count": "[variables('numberofvmParameters')]"
+		},		
+		"name": "[variables('vmParameters')[copyIndex()].vmName]",
+		"location": "[variables('location')]",	
+		"dependsOn": ["copynic",
+		"[concat('Microsoft.Storage/storageAccounts/',variables('storageAccountName'))]",
+		"[concat('Microsoft.Compute/availabilitySets/',variables('availabilitySetName'))]"],
+		"properties": {
+			"hardwareProfile": {
+				"vmSize": "[variables('vmParameters')[copyIndex()].vmSize]"
+			},
+			"osProfile": {
+				"computerName": "[variables('vmParameters')[copyIndex()].computerName]",
+				"adminUsername": "[parameters('adminUsername')]",
+				"adminPassword": "[parameters('adminPassword')]"
+			},
+			"storageProfile": {
+				"imageReference": {
+					"publisher": "[variables('vmParameters')[copyIndex()].imagePublisher]",
+					"offer": "[variables('vmParameters')[copyIndex()].imageOffer]",
+					"sku": "[variables('vmParameters')[copyIndex()].imageSkus]",
+					"version": "[variables('vmParameters')[copyIndex()].imageVersion]"
+				},
+				"osDisk": {
+					"name": "[variables('vmParameters')[copyIndex()].osDiskName]",
+					"vhd": {
+						"uri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net/',variables('vmParameters')[copyIndex()].osDiskStorageAccountContainerName,'/',variables('vmParameters')[copyIndex()].osDiskName,'.vhd')]"
+					},
+					"caching": "ReadWrite",
+					"createOption": "FromImage"
+				},
+				"dataDisks": [{
+					"name": "[variables('vmParameters')[copyIndex()].dataDisk1Name]",
+					"diskSizeGB": "[variables('vmParameters')[copyIndex()].dataDisk1Size]",
+					"lun": 0,
+					"vhd": {
+						"uri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net/',variables('vmParameters')[copyIndex()].dataDisk1StorageAccountContainerName,'/',variables('vmParameters')[copyIndex()].dataDisk1Name,'.vhd')]"
+					},
+					"createOption": "Empty"
+				}]					
+			},
+			
+			"networkProfile": {
+			  "networkInterfaces": [
+				{
+				  "properties": {
+					"primary": true
+				  },
+				  "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('vmParameters')[copyIndex()].nic1Name)]"
+				},
+				{
+				  "properties": {
+					"primary": false
+				  },
+				  "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('vmParameters')[copyIndex()].nic2Name)]"
+				}
+			  ]
+			},
+			
+			"availabilitySet": {
+				"id": "[resourceId('Microsoft.Compute/availabilitySets',variables('availabilitySetName'))]"
+			}
+			
+		}
+	}
+	]
+}
