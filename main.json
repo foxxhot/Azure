@@ -1,0 +1,39 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"variables": {
+		"baseurl": "https://raw.githubusercontent.com/foxxhot/Azure/master/createvnet.json",
+		"apiVersion": "2015-11-01",
+		"location": "[resourceGroup().location]",
+		
+	},
+	"resources": [{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "CreateVnet",
+		"type": "Microsoft.Resources/deployments",
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[variables('baseurl')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"vnetname": {
+					"value": "myvnet"
+				},			
+				"location": {
+					"value": "[variables('location')]"					
+				},
+				"vnetaddressSpace": {
+					"value": "10.0.0.0/16"		
+				},
+				"subnetname": {
+					"value": "sb1"
+				},
+				"subneteprifix1": {
+					"value": "10.0.0.0/24"
+				}
+			}
+		}
+	}]
+}
