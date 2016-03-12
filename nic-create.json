@@ -1,0 +1,83 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"location": {
+			"type": "string",
+			"metadata": {
+				"description": "Deployment location"
+			}
+		},
+		"nicName": {
+			"type": "string",
+			"metadata": {
+				"description": "Nic name"
+			}
+		},
+		"privateIPAllocationMethod": {
+			"type": "string",
+			"metadata": {
+				"description": "privateIPAllocationMethod"
+			}
+		},
+		"subnetID": {
+			"type": "string",
+			"metadata": {
+				"description": "subnetID"
+			}
+		}
+	},
+	
+	"variables": {
+		"apiVersion": "2015-06-15"
+	},
+	"resources": [{
+		"apiVersion": "[variables('apiVersion')]",
+		"type": "Microsoft.Network/networkInterfaces",
+		"name": "[parameters('nicName')]",
+		"location": "[parameters('location')]",
+		"properties": {
+			"ipConfigurations": [{
+				"name": "ipconfig1",
+				"properties": {
+					"privateIPAllocationMethod": "[parameters('privateIPAllocationMethod')]",
+					"subnet": {
+						"subnetID": "[parameters('subnetID')]"
+					}
+				}
+			}]
+		}
+	}]
+}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	{
+
+    },
