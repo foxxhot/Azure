@@ -42,7 +42,7 @@
 				"properties": {
 					"privateIPAllocationMethod": "[parameters('privateIPAllocationMethod')]",
 					"subnet": {
-						"subnetID": "[parameters('subnetID')]"
+						"id": "[parameters('subnetID')]"
 					}
 				}
 			}]
@@ -51,33 +51,3 @@
 }
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	{
-
-    },
