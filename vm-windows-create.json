@@ -1,0 +1,129 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"location": {
+			"type": "string",
+			"metadata": {
+				"description": "Deployment location"
+			}
+		},
+		"vmName": {
+			"type": "string",
+			"metadata": {
+				"description": "VM name"
+			}
+		},
+		"vmSize": {
+			"type": "string",
+			"metadata": {
+				"description": "VM size"
+			}
+		},
+		"adminUsername": {
+			"type": "string",
+			"metadata": {
+				"description": "adminUser name"
+			}
+		},
+		"adminPassword": {
+			"type": "securestring",
+			"metadata": {
+				"description": "adminUser Password"
+			}
+		},		
+		"imagePublisher": {
+			"type": "string",
+			"metadata": {
+				"description": "imagePublisher"
+			}
+		},			
+		"imageOffer": {
+			"type": "string",
+			"metadata": {
+				"description": "imageOffer"
+			}
+		},			
+		"osSku": {
+			"type": "string",
+			"metadata": {
+				"description": "osSku"
+			}
+		},			
+		"osdiskName": {
+			"type": "string",
+			"metadata": {
+				"description": "osdiskName"
+			}
+		},			
+		"storageAccountName": {
+			"type": "string",
+			"metadata": {
+				"description": "storageAccountName"
+			}
+		},			
+		"vmStorageAccountContainerName": {
+			"type": "string",
+			"metadata": {
+				"description": "vmStorageAccountContainerName"
+			}
+		},			
+		"networkInterfacesRef": {
+			"type": "string",
+			"metadata": {
+				"description": "networkInterfaces Reference"
+			}
+		}		
+		
+	},
+	
+	"variables": {
+		"apiVersion": "2015-06-15"
+	},
+	
+	"resources": [
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"type": "Microsoft.Compute/virtualMachines",
+		"name": "[parameters('vmName')]",
+		"location": "[parameters('location')]",
+		"properties": {
+			"hardwareProfile": {
+				"vmSize": "[parameters('vmSize')]"
+			},
+			"osProfile": {
+				"computerName": "[parameters('vmName')]",
+				"adminUsername": "[parameters('adminUsername')]",
+				"adminPassword": "[parameters('adminPassword')]"
+			},
+			"storageProfile": {
+				"imageReference": {
+					"publisher": "[parameters('imagePublisher')]",
+					"offer": "[parameters('imageOffer')]",
+					"sku": "[parameters('osSku')]",
+					"version": "latest"
+				},
+				"osDisk": {
+					"name": "[parameters('osdiskName')]",
+					"vhd": {
+						"uri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/',parameters('osdiskName'),'.vhd')]"
+					},
+					"caching": "ReadWrite",
+					"createOption": "FromImage"
+				},
+			},
+			"networkProfile": {
+				"networkInterfaces": [{
+					"id": "[parameters('networkInterfacesRef')]"
+				}]
+			},
+			"diagnosticsProfile": {
+				"bootDiagnostics": {
+					"enabled": "true",
+					"storageUri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net')]"
+				}
+			}
+		}
+	}
+	]
+}
