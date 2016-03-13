@@ -1,0 +1,205 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"variables": {
+		"baseurl": "https://raw.githubusercontent.com/foxxhot/Azure/master/createvnet.json",
+		"apiVersion": "2015-01-01",
+		"location": "[resourceGroup().location]",
+		"baseurl": "https://raw.githubusercontent.com/foxxhot/Azure/master/",
+		"vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworks').vnetName)]",
+		"adminUsername": "feadmin",
+		"adminPassword": "Qweasd123",
+		"storageaccount": {
+			"storageAccountType": "Standard_LRS",
+			"storageAccountName": "arm434"		
+		},
+			
+		"virtualNetworks": {
+			"vnetName": "myvnet",
+			"vnetAddressPrefix": "10.0.0.0/16",
+			"subnet1Name": "ap",
+			"subnet1Prefix": "10.0.0.0/24",
+			"subnet2Name": "db",
+			"subnet2Prefix": "10.0.1.0/24"
+		},	
+		
+		"networkinterface": [
+			{
+				"nicName": "nic1",
+				"privateIPAllocationMethod": "Dynamic" ,
+				"subnetName": "[variables('virtualNetworks').subnet1Name]"
+			},
+			{
+				"nicName": "nic2",
+				"privateIPAllocationMethod": "Dynamic" ,
+				"subnetName": "[variables('virtualNetworks').subnet1Name]"
+			}
+		],
+		
+		"virtualmachine": [
+			{
+				"vmName": "ap1",
+				"vmSize": "Standard_A1" ,
+				"imagePublisher": "Canonical",
+				"imageOffer": "UbuntuServer",
+				"osSku": "14.04.2-LTS",
+				"osdiskName": "ap1-osdisk",
+				"storageAccountName": "[variables('storageaccount').storageAccountName]",
+				"vmStorageAccountContainerName": "vhds",
+				"networkInterface1": "nic1"		
+			}
+		]
+	},
+	
+	"resources": [
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "create-storageaccount",
+		"type": "Microsoft.Resources/deployments",
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'storage-account-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[variables('location')]"
+				},
+				"storageAccountType": {
+					"value": "[variables('storageaccount').storageAccountType]"
+				},
+				"storageAccountName": {
+					"value": "[variables('storageaccount').storageAccountName]"
+				}
+			}
+		}
+	},	
+	
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "create-vnet",
+		"type": "Microsoft.Resources/deployments",
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'vnet-2sub-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[variables('location')]"
+				},
+				"vnetName": {
+					"value": "[variables('virtualNetworks').vnetName]"
+				},
+				"vnetAddressPrefix": {
+					"value": "[variables('virtualNetworks').vnetAddressPrefix]"
+				},
+				"subnet1Prefix": {
+					"value": "[variables('virtualNetworks').subnet1Prefix]"
+				},
+				"subnet1Name": {
+					"value": "[variables('virtualNetworks').subnet1Name]"
+				},
+				"subnet2Prefix": {
+					"value": "[variables('virtualNetworks').subnet2Prefix]"
+				},
+				"subnet2Name": {
+					"value": "[variables('virtualNetworks').subnet2Name]"
+				}
+			}
+		}
+	},
+	
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "[concat('create-nic-',variables('networkinterface')[copyIndex()].nicName)]",
+		"type": "Microsoft.Resources/deployments",
+		"dependsOn": ["Microsoft.Resources/deployments/create-vnet"],
+		"copy":{
+			"name": "copycreateNic",
+			"count": "[length(variables('networkinterface'))]" 
+		},
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'nic-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[variables('location')]"
+				},
+				"nicName": {
+					"value": "[variables('networkinterface')[copyIndex()].nicName]"
+				},
+				"privateIPAllocationMethod": {
+					"value": "[variables('networkinterface')[copyIndex()].privateIPAllocationMethod]"
+				},
+				"subnetRef": {
+					"value": "[concat(variables('vnetID'),'/subnets/',variables('networkinterface')[copyIndex()].subnetName)]"
+				}
+			}
+		}
+	},
+	
+
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "[concat('create-vm-',variables('virtualmachine')[copyIndex()].vmName)]",
+		"type": "Microsoft.Resources/deployments",
+		"dependsOn": ["[concat('Microsoft.Resources/deployments/','create-nic-',variables('virtualmachine')[copyIndex()].networkInterface1)]","Microsoft.Resources/deployments/create-storageaccount"],
+		"copy":{
+			"name": "copycreateVm",
+			"count":  "[length(variables('virtualmachine'))]" 
+		},
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'vm-windows-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[variables('location')]"
+				},
+				"vmName": {
+					"value": "[variables('virtualmachine')[copyIndex()].vmName]"
+				},
+				"vmSize": {
+					"value": "[variables('virtualmachine')[copyIndex()].vmSize]"
+				},
+				"adminUsername": {
+					"value": "[variables('adminUsername')]"
+				},
+				"adminPassword": {
+					"value": "[variables('adminPassword')]"
+				},
+				"imagePublisher": {
+					"value": "[variables('virtualmachine')[copyIndex()].imagePublisher]"
+				},
+				"imageOffer": {
+					"value": "[variables('virtualmachine')[copyIndex()].imageOffer]"
+				},
+				"osSku": {
+					"value": "[variables('virtualmachine')[copyIndex()].osSku]"
+				},
+				"osdiskName": {
+					"value": "[variables('virtualmachine')[copyIndex()].osdiskName]"
+				},
+				"storageAccountName": {
+					"value": "[variables('virtualmachine')[copyIndex()].storageAccountName]"
+				},
+				"vmStorageAccountContainerName": {
+					"value": "[variables('virtualmachine')[copyIndex()].vmStorageAccountContainerName]"
+				},
+				"networkInterfacesRef": {
+					"value": "[resourceId('Microsoft.Network/networkInterfaces',variables('virtualmachine')[copyIndex()].networkInterface1)]"
+				}
+			}
+		}
+	},	
+	
+	]
+}
