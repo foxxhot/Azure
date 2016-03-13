@@ -11,14 +11,20 @@
 			"Premium_LRS"],
 			"metadata": {
 				"description": "Storage Account type"
-			}
+			}		
 		},
 		"storageAccountName": {
 			"type": "string",
 			"metadata": {
 				"description": "Storage Account Name"
 			}
-		}
+		},
+		"location": {
+			"type": "string",
+			"metadata": {
+				"description": "Deployment location"
+			}
+		},		
 	},
 	"variables": {
 		"apiVersion": "2015-06-15"
@@ -27,7 +33,7 @@
 		"type": "Microsoft.Storage/storageAccounts",
 		"name": "[parameters('storageAccountName')]",
 		"apiVersion": "[variables('apiVersion')]",
-		"location": "[resourceGroup().location]",
+		"location": "[parameters('location')]",
 		"properties": {
 			"accountType": "[parameters('storageAccountType')]"
 		}
