@@ -73,13 +73,13 @@
 			"metadata": {
 				"description": "networkInterfaces Reference"
 			}
-		}
+		},
 		"availabilitySetRef": {
 			"type": "string",
 			"metadata": {
 				"description": "availabilitySetRef"
 			}
-		},
+		}
 		
 	},
 	
