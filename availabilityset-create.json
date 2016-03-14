@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"location": {
+			"type": "string",
+			"metadata": {
+				"description": "location"
+			}		
+		},
+		"availabilitySetName": {
+			"type": "string",
+			"metadata": {
+				"description": "availabilitySetName"
+			}
+		},
+		"platformFaultDomainCount": {
+			"type": "string",
+			"metadata": {
+				"description": "platformFaultDomainCount"
+			}
+		},
+		"platformUpdateDomainCount": {
+			"type": "string",
+			"metadata": {
+				"description": "platformUpdateDomainCount"
+			}
+		},			
+	},
+	"variables": {
+		"apiVersion": "2015-06-15"
+	},
+	"resources": [	
+	{
+		"type": "Microsoft.Compute/availabilitySets",
+		"name": "[parameters('availabilitySetName')]",
+		"apiVersion": "[variables('apiVersion')]",
+		"location": "[parameters('location')]",
+		"properties": {
+			"platformFaultDomainCount": "[parameters('platformFaultDomainCount')]",
+			"platformUpdateDomainCount": "[parameters('platformUpdateDomainCount')]"
+		}
+	}
+	]
+}
