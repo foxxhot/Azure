@@ -1,6 +1,6 @@
 # Azure
 
-<a href="https://azuredeploy.net/?repository=https://raw.githubusercontent.com/foxxhot/Azure/master/ target="_blank">
+<a href="https://azuredeploy.net/?repository=https://github.com/foxxhot/azure" target="webserver.json">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
