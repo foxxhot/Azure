@@ -125,7 +125,7 @@
 			},
 			"availabilitySet": {
 				"id": "[parameters('availabilitySetRef')]"
-			}
+			},
 			
 			"diagnosticsProfile": {
 				"bootDiagnostics": {
