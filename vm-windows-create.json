@@ -49,7 +49,7 @@
 			"metadata": {
 				"description": "osSku"
 			}
-		},			
+		},
 		"osdiskName": {
 			"type": "string",
 			"metadata": {
@@ -73,7 +73,13 @@
 			"metadata": {
 				"description": "networkInterfaces Reference"
 			}
-		}		
+		}
+		"availabilitySetRef": {
+			"type": "string",
+			"metadata": {
+				"description": "availabilitySetRef"
+			}
+		},
 		
 	},
 	
@@ -117,6 +123,10 @@
 					"id": "[parameters('networkInterfacesRef')]"
 				}]
 			},
+			"availabilitySet": {
+				"id": "[parameters('availabilitySetRef')]"
+			}
+			
 			"diagnosticsProfile": {
 				"bootDiagnostics": {
 					"enabled": "true",
