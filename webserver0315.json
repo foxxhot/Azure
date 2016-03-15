@@ -1,0 +1,405 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	
+	"parameters":{
+		"location": {
+			"type": "string",
+			"defaultValue" :"japaneast",
+			"metadata": {
+				"description": "location of server"
+			}		
+		},		
+		"numberofAPserver": {
+			"type": "int",
+			"defaultValue" :2,
+			"metadata": {
+				"description": "number of APserver"
+			}		
+		},
+		"numberofDBserver": {
+			"type": "int",
+			"defaultValue" :2,
+			"metadata": {
+				"description": "number of DBserver"
+			}		
+		},
+		"systemPrifix": {
+			"type": "string",
+			"defaultValue" :"foxhot",
+			"metadata": {
+				"description": "system Prifix"
+			}		
+		},
+		"storageAccountName": {
+			"type": "string",
+			"metadata": {
+				"description": "storageAccountName"
+			}		
+		},
+		"storageAccountType": {
+			"type": "string",
+			"defaultValue" :"Standard_LRS",			
+			"metadata": {
+				"description": "storageAccountName"
+			}		
+		},
+		"firstlayerPrifix": {
+			"type": "string",
+			"defaultValue" :"AP",			
+			"metadata": {
+				"description": "firstlayerPrifix"
+			}		
+		},
+		"secondlayerPrifix": {
+			"type": "string",
+			"defaultValue" :"DB",			
+			"metadata": {
+				"description": "firstlayerPrifix"
+			}		
+		}
+	},
+
+	"variables" :{
+		"baseurl": "https://raw.githubusercontent.com/foxxhot/Azure/master/createvnet.json",
+		"apiVersion": "2015-01-01",
+		"baseurl": "https://raw.githubusercontent.com/foxxhot/Azure/master/",
+		"vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworks').vnetName)]",
+		"adminUsername": "feadmin",
+		"adminPassword": "Qweasd123",
+		"imagePublisher": "Canonical",
+		"imageOffer": "UbuntuServer",
+		"osSku": "14.04.2-LTS",
+		"vmStorageAccountContainerName": "vhds",
+		"privateIPAllocationMethod": "Static",
+		"availabilitySet": [
+			{
+				"availabilitySetName": "[concat(parameters('systemPrifix'),'-avset-',parameters('firstlayerPrifix'))]",
+				"platformFaultDomainCount": "3",
+				"platformUpdateDomainCount": "20"
+			},
+			{
+				"availabilitySetName": "[concat(parameters('systemPrifix'),'-avset-',parameters('secondlayerPrifix'))]",
+				"platformFaultDomainCount": "3",
+				"platformUpdateDomainCount": "20"
+			}
+			
+		],
+		"virtualNetworks": {
+			"vnetName": "[concat(parameters('systemPrifix'),'-vnet')]",
+			"vnetAddressPrefix": "10.0.0.0/16",
+			"subnet1Name": "[concat(parameters('systemPrifix'),'-subnet-',parameters('firstlayerPrifix'))]",
+			"subnet1Prefix": "10.0.0.0/24",
+			"subnet2Name": "[concat(parameters('systemPrifix'),'-subnet-',parameters('secondlayerPrifix'))]",
+			"subnet2Prefix": "10.0.1.0/24"
+		}
+	},
+
+	"resources": [
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "create-storageaccount",
+		"type": "Microsoft.Resources/deployments",
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'storage-account-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[parameters('location')]"
+				},
+				"storageAccountType": {
+					"value": "[parameters('storageAccountType')]"
+				},
+				"storageAccountName": {
+					"value": "[parameters('storageAccountName')]"
+				}
+			}
+		}
+	},	
+
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "create-vnet",
+		"type": "Microsoft.Resources/deployments",
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'vnet-2sub-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[parameters('location')]"
+				},
+				"vnetName": {
+					"value": "[variables('virtualNetworks').vnetName]"
+				},
+				"vnetAddressPrefix": {
+					"value": "[variables('virtualNetworks').vnetAddressPrefix]"
+				},
+				"subnet1Prefix": {
+					"value": "[variables('virtualNetworks').subnet1Prefix]"
+				},
+				"subnet1Name": {
+					"value": "[variables('virtualNetworks').subnet1Name]"
+				},
+				"subnet2Prefix": {
+					"value": "[variables('virtualNetworks').subnet2Prefix]"
+				},
+				"subnet2Name": {
+					"value": "[variables('virtualNetworks').subnet2Name]"
+				}
+			}
+		}
+	},
+
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "[concat('create-availabilityset-',variables('availabilitySet')[copyIndex()].availabilitySetName)]",
+		"type": "Microsoft.Resources/deployments",
+		"copy":{
+			"name": "copycreateAvailabilitySet",
+			"count":  "[length(variables('availabilitySet'))]" 
+		},
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'availabilityset-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[parameters('location')]"
+				},
+				"availabilitySetName": {
+					"value": "[variables('availabilitySet')[copyIndex()].availabilitySetName]"
+				},
+				"platformFaultDomainCount": {
+					"value": "[variables('availabilitySet')[copyIndex()].platformFaultDomainCount]"
+				},
+				"platformUpdateDomainCount": {
+					"value": "[variables('availabilitySet')[copyIndex()].platformUpdateDomainCount]"
+				}
+			}
+		}
+	},
+
+	
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "[concat('create-nic-',parameters('firstlayerPrifix'),add(1,copyIndex()))]",
+		"type": "Microsoft.Resources/deployments",
+		"dependsOn": ["Microsoft.Resources/deployments/create-vnet"],
+		"copy":{
+			"name": "copycreateApnic",
+			"count": "[parameters('numberofAPserver')]" 
+		},
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'nic-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[parameters('location')]"
+				},
+				"nicName": {
+					"value": "[concat(parameters('systemPrifix'),'-',parameters('firstlayerPrifix'),add(1,copyIndex()),'-nic1')]"
+				},
+				"privateIPAllocationMethod": {
+					"value": "[variables('privateIPAllocationMethod')]"
+				},
+				"privateIPAddress": {
+					"value": "[concat('10.0.0.',add(4,copyIndex()))]"
+				},
+				"subnetRef": {
+					"value": "[concat(variables('vnetID'),'/subnets/',variables('virtualNetworks').subnet1Name)]"
+				}
+			}
+		}
+	},
+
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "[concat('create-nic-',parameters('secondlayerPrifix'),add(1,copyIndex()))]",
+		"type": "Microsoft.Resources/deployments",
+		"dependsOn": ["Microsoft.Resources/deployments/create-vnet"],
+		"copy":{
+			"name": "copycreateDbnic",
+			"count": "[parameters('numberofDBserver')]"
+		},
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'nic-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[parameters('location')]"
+				},
+				"nicName": {
+					"value": "[concat(parameters('systemPrifix'),'-',parameters('secondlayerPrifix'),add(1,copyIndex()),'-nic1')]"
+				},
+				"privateIPAllocationMethod": {
+					"value": "[variables('privateIPAllocationMethod')]"
+				},
+				"privateIPAddress": {
+					"value": "[concat('10.0.1.',add(4,copyIndex()))]"
+				},
+				"subnetRef": {
+					"value": "[concat(variables('vnetID'),'/subnets/',variables('virtualNetworks').subnet2Name)]"
+				}
+			}
+		}
+	},	
+	
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "[concat('create-server-',parameters('firstlayerPrifix'),add(1,copyIndex()))]",
+		"type": "Microsoft.Resources/deployments",
+		"dependsOn": ["copycreateAvailabilitySet","copycreateApnic","Microsoft.Resources/deployments/create-storageaccount"],
+		"copy":{
+			"name": "copycreateApserver",
+			"count":  "[parameters('numberofAPserver')]" 
+		},
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'vm-windows-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[parameters('location')]"
+				},
+				"vmName": {
+					"value": "[concat(parameters('systemPrifix'),'-',parameters('firstlayerPrifix'),add(1,copyIndex()))]"
+				},
+				"vmSize": {
+					"value": "Standard_A1"
+				},
+				"adminUsername": {
+					"value": "[variables('adminUsername')]"
+				},
+				"adminPassword": {
+					"value": "[variables('adminPassword')]"
+				},
+				"imagePublisher": {
+					"value": "[variables('imagePublisher')]"
+				},
+				"imageOffer": {
+					"value": "[variables('imageOffer')]"
+				},
+				"osSku": {
+					"value": "[variables('osSku')]"
+				},
+				"osdiskName": {
+					"value": "[concat(parameters('systemPrifix'),'-osdiskName-',parameters('firstlayerPrifix'),add(1,copyIndex()))]"
+				},
+				"storageAccountName": {
+					"value": "[parameters('storageAccountName')]"
+				},
+				"vmStorageAccountContainerName": {
+					"value": "[variables('vmStorageAccountContainerName')]"
+				},
+				"networkInterfacesRef": {
+					"value": "[resourceId('Microsoft.Network/networkInterfaces',concat(parameters('systemPrifix'),'-',parameters('firstlayerPrifix'),add(1,copyIndex()),'-nic1'))]"
+				},
+				"availabilitySetRef": {
+					"value": "[resourceId('Microsoft.Compute/availabilitySets',variables('availabilitySet')[0].availabilitySetName)]"
+				}
+			}
+		}
+	},
+
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "[concat('create-server-',parameters('secondlayerPrifix'),add(1,copyIndex()))]",
+		"type": "Microsoft.Resources/deployments",
+		"dependsOn": ["copycreateAvailabilitySet","copycreateDbnic","Microsoft.Resources/deployments/create-storageaccount"],
+		"copy":{
+			"name": "copycreateDbserver",
+			"count":  "[parameters('numberofDBserver')]" 
+		},
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'vm-windows-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[parameters('location')]"
+				},
+				"vmName": {
+					"value": "[concat(parameters('systemPrifix'),'-',parameters('secondlayerPrifix'),add(1,copyIndex()))]"
+				},
+				"vmSize": {
+					"value": "Standard_A1"
+				},
+				"adminUsername": {
+					"value": "[variables('adminUsername')]"
+				},
+				"adminPassword": {
+					"value": "[variables('adminPassword')]"
+				},
+				"imagePublisher": {
+					"value": "[variables('imagePublisher')]"
+				},
+				"imageOffer": {
+					"value": "[variables('imageOffer')]"
+				},
+				"osSku": {
+					"value": "[variables('osSku')]"
+				},
+				"osdiskName": {
+					"value": "[concat(parameters('systemPrifix'),'-osdiskName-',parameters('secondlayerPrifix'),add(1,copyIndex()))]"
+				},
+				"storageAccountName": {
+					"value": "[parameters('storageAccountName')]"
+				},
+				"vmStorageAccountContainerName": {
+					"value": "[variables('vmStorageAccountContainerName')]"
+				},
+				"networkInterfacesRef": {
+					"value": "[resourceId('Microsoft.Network/networkInterfaces',concat(parameters('systemPrifix'),'-',parameters('secondlayerPrifix'),add(1,copyIndex()),'-nic1'))]"
+				},
+				"availabilitySetRef": {
+					"value": "[resourceId('Microsoft.Compute/availabilitySets',variables('availabilitySet')[1].availabilitySetName)]"
+				}
+			}
+		}
+	},
+	{
+		"apiVersion": "[variables('apiVersion')]",
+		"name": "create-exLB",
+		"type": "Microsoft.Resources/deployments",
+		"properties": {
+			"mode": "incremental",
+			"templateLink": {
+				"uri": "[concat(variables('baseurl'),'external-loadbalancer-create.json')]",
+				"contentVersion": "1.0.0.0"
+			},
+			"parameters": {
+				"location": {
+					"value": "[parameters('location')]"
+				},
+				"exLBName": {
+					"value": "[concat(parameters('systemPrifix'),'-exLB')]"
+				},
+				"LBpublicIPAddressName": {
+					"value": "[concat(parameters('systemPrifix'),'-LBpublicIPAddressName')]"
+				},
+				"LBpublicIPAddressType": {
+					"value": "Dynamic"
+				}
+			}
+		}
+	},		
+	]
+}
