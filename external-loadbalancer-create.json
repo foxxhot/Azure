@@ -1,0 +1,99 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"location": {
+			"type": "string",
+			"metadata": {
+				"description": "location"
+			}
+		},
+		"exLBName": {
+			"type": "string",
+			"defaultValue": "myLB",
+			"metadata": {
+				"description": "external Load Balancer name"
+			}
+		},
+		"LBpublicIPAddressName": {
+			"type": "string",
+			"defaultValue": "myPublicIP",
+			"metadata": {
+				"description": "Public IP Name"
+			}
+		},
+		"LBpublicIPAddressType": {
+			"type": "string",
+			"defaultValue": "Dynamic",
+			"metadata": {
+				"description": "publicIPAddressType"
+			}
+		}
+		
+	},
+	"variables": {
+		"LBpublicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',parameters('LBpublicIPAddressName'))]",
+		"exLBID": "[resourceId('Microsoft.Network/loadBalancers',parameters('exLBName'))]",
+		"exLBfrontEndIPConfigID": "[concat(variables('exLBID'),'/frontendIPConfigurations/exLBFrontEnd')]",
+		"exLBPoolID": "[concat(variables('exLBID'),'/backendAddressPools/exLBBackendPool1')]",
+		"exLBProbeID": "[concat(variables('exLBID'),'/probes/tcpProbe')]"
+	},
+	"resources": [{
+		"apiVersion": "2015-05-01-preview",
+		"type": "Microsoft.Network/publicIPAddresses",
+		"name": "[parameters('LBpublicIPAddressName')]",
+		"location": "[parameters('location')]",
+		"properties": {
+			"publicIPAllocationMethod": "[parameters('LBpublicIPAddressType')]"
+			
+		}
+	},
+	{
+		"apiVersion": "2015-05-01-preview",
+		"name": "[parameters('exLBName')]",
+		"type": "Microsoft.Network/loadBalancers",
+		"location": "[parameters('location')]",
+		"dependsOn": ["[concat('Microsoft.Network/publicIPAddresses/', parameters('LBpublicIPAddressName'))]"],
+		"properties": {
+			"frontendIPConfigurations": [{
+				"name": "exLBFrontEnd",
+				"properties": {
+					"publicIPAddress": {
+						"id": "[variables('LBpublicIPAddressID')]"
+					}
+				}
+			}],
+			"backendAddressPools": [{
+				"name": "exLBBackendPool1"
+			}],
+			"loadBalancingRules": [{
+				"name": "LBRule",
+				"properties": {
+					"frontendIPConfiguration": {
+						"id": "[variables('exLBfrontEndIPConfigID')]"
+					},
+					"backendAddressPool": {
+						"id": "[variables('exLBPoolID')]"
+					},
+					"protocol": "tcp",
+					"frontendPort": 80,
+					"backendPort": 80,
+					"enableFloatingIP": false,
+					"idleTimeoutInMinutes": 5,
+					"probe": {
+						"id": "[variables('exLBProbeID')]"
+					}
+				}
+			}],
+			"probes": [{
+				"name": "tcpProbe",
+				"properties": {
+					"protocol": "tcp",
+					"port": 80,
+					"intervalInSeconds": 5,
+					"numberOfProbes": 2
+				}
+			}]
+		}
+	}]
+}
