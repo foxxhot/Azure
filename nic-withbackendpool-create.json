@@ -57,7 +57,7 @@
 						"id": "[parameters('subnetRef')]"
 					},
 					"loadBalancerBackendAddressPools": [{
-						"id": "[parameters('exLBbackendpoolRef)]"
+						"id": "[parameters('exLBbackendpoolRef')]"
 					}],
 					
 				}
