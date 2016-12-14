@@ -1,8 +1,10 @@
 @{
     AllNodes = @(
         @{
-            NodeName                    = 'sv5'
+            NodeName                    = '*'
             PSDscAllowPlainTextPassword = $True
+            ConfigurationMode = 'ApplyOnly'
+            RebootNodeIfNeeded = $true  		
         }
     )
 }
