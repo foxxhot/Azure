@@ -109,5 +109,3 @@
         Restart-Computer -Confirm:$confirm -Force:$force
     }
 }
-
-Install-JapaneseUI -targetOSVersion Windows2012R2 -credential $Admin -Verbose -force $true
